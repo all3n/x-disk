@@ -15,8 +15,10 @@ int main(int argc, char *argv[]) {
     printf("baidu_token is null\n");
     return -1;
   }
-  get_user_info();
-  get_quota();
+  // get_user_info();
+  // get_quota();
+  // get_file_list();
+  bdy_category_info();
 
 
   // char *url = build_url("http://127.0.0.1:5001/api/post", "wd", "test",
