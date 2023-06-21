@@ -1,7 +1,7 @@
 #include "file_io.h"
 #include <json-c/json_types.h>
 
-struct json_object * load_json_from_file(const char *path) {
+struct json_object *load_json_from_file(const char *path) {
   FILE *fp = fopen(path, "r");
   if (fp == NULL) {
     printf("open file %s failed\n", path);
@@ -14,11 +14,12 @@ struct json_object * load_json_from_file(const char *path) {
   fread(buffer, size, 1, fp);
   buffer[size] = '\0';
   struct json_object *root = json_tokener_parse(buffer);
-  if(root == NULL){
+  if (root == NULL) {
     printf("config json is null\n");
   }
-  //printf("%s\n", json_object_to_json_string(root));
+  // printf("%s\n", json_object_to_json_string(root));
   free(buffer);
   fclose(fp);
+
   return root;
 }

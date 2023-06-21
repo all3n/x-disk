@@ -53,3 +53,6 @@ dkms.conf
 /build
 .clangd
 .mvim.sh
+.cache
+compile_commands.json
+project.local.makefile

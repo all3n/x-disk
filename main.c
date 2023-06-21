@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "common.h"
 #include "baidu_yun.h"
 
@@ -17,8 +18,8 @@ int main(int argc, char *argv[]) {
   }
   // get_user_info();
   // get_quota();
-  // get_file_list();
-  bdy_category_info();
+  bdy_file_list();
+  //bdy_category_info();
 
 
   // char *url = build_url("http://127.0.0.1:5001/api/post", "wd", "test",

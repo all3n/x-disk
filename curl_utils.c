@@ -45,7 +45,7 @@ int curl_request(http_request *request, http_response *response) {
     }
 
     res = curl_easy_perform(curl);
-    if(request->json && response->data){
+    if (request->json && response->data) {
       response->json = json_tokener_parse(response->data);
       // free txt response
       free(response->data);
@@ -103,8 +103,7 @@ char *build_url(const char *base_url, ...) {
   return url;
 }
 
-
-char *build_url2(const char *base_url, const char * query_path, ...){
+char *build_url2(const char *base_url, const char *query_path, ...) {
   va_list arg_list;
   va_start(arg_list, query_path);
   int total_len = strlen(base_url) + strlen(query_path) + 1;
@@ -145,10 +144,7 @@ char *build_url2(const char *base_url, const char * query_path, ...){
 
   va_end(arg_list);
   return url;
-
 }
-
-
 
 // 回调函数，用于处理curl的返回结果
 size_t write_callback(void *ptr, size_t size, size_t nmemb, void *userdata) {
@@ -192,7 +188,7 @@ void clean_response(http_response *response) {
   if (response->data) {
     free(response->data);
   }
-  if(response->json){
+  if (response->json) {
     json_object_put(response->json);
   }
 }

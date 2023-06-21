@@ -7,7 +7,7 @@
  *  get_user_info account/avatar/vip_type
  *  https://pan.baidu.com/union/doc/pksg0s9ns
  */
-int get_user_info() {
+int bdy_user_info() {
   global_ctx *ctx = get_global_ctx();
   const char *baidu_token = ctx->config->baidu_token;
   char *url =
@@ -35,7 +35,7 @@ int get_user_info() {
  *  get_quota of used/total
  *  https://pan.baidu.com/union/doc/Cksg0s9ic
  */
-int get_quota() {
+int bdy_quota() {
   global_ctx *ctx = get_global_ctx();
   const char *baidu_token = ctx->config->baidu_token;
   char *url = build_url2(BDY_API_BASE, "/api/quota", "check_free", "1",
@@ -51,7 +51,7 @@ int get_quota() {
   clean_response(&res);
   return 0;
 }
-int get_api(char * url) {
+int get_api(char *url) {
   http_request req = {.url = url, .json = true, .method = GET};
   http_response res = {.data = NULL, .size = 0};
   int code = curl_request(&req, &res);
@@ -65,8 +65,7 @@ int get_api(char * url) {
   return 0;
 }
 
-
-int get_file_list() {
+int bdy_file_list() {
   global_ctx *ctx = get_global_ctx();
   const char *baidu_token = ctx->config->baidu_token;
   const char *dir = "/";
@@ -75,46 +74,51 @@ int get_file_list() {
   return get_api(url);
 }
 
-int bdy_list_doc(){
+int bdy_list_doc() {
   global_ctx *ctx = get_global_ctx();
   const char *baidu_token = ctx->config->baidu_token;
   const char *dir = "/";
-  char *url = build_url2(BDY_API_BASE, "/rest/2.0/xpan/file", "method", "doclist",
-                         "access_token", baidu_token, "dir", dir, NULL);
+  char *url =
+      build_url2(BDY_API_BASE, "/rest/2.0/xpan/file", "method", "doclist",
+                 "access_token", baidu_token, "dir", dir, NULL);
   return get_api(url);
 }
 
-int bdy_list_img(){
+int bdy_list_img() {
   global_ctx *ctx = get_global_ctx();
   const char *baidu_token = ctx->config->baidu_token;
   const char *dir = "/";
-  char *url = build_url2(BDY_API_BASE, "/rest/2.0/xpan/file", "method", "imagelist",
-                         "access_token", baidu_token, "dir", dir, NULL);
+  char *url =
+      build_url2(BDY_API_BASE, "/rest/2.0/xpan/file", "method", "imagelist",
+                 "access_token", baidu_token, "dir", dir, NULL);
   return get_api(url);
 }
-int bdy_list_video(){
+int bdy_list_video() {
   global_ctx *ctx = get_global_ctx();
   const char *baidu_token = ctx->config->baidu_token;
   const char *dir = "/";
-  char *url = build_url2(BDY_API_BASE, "/rest/2.0/xpan/file", "method", "videolist",
-                         "access_token", baidu_token, "dir", dir, NULL);
-  return get_api(url);
-}
-
-int bdy_list_bt(){
-  global_ctx *ctx = get_global_ctx();
-  const char *baidu_token = ctx->config->baidu_token;
-  const char *dir = "/";
-  char *url = build_url2(BDY_API_BASE, "/rest/2.0/xpan/file", "method", "btlist",
-                         "access_token", baidu_token, "dir", dir, NULL);
+  char *url =
+      build_url2(BDY_API_BASE, "/rest/2.0/xpan/file", "method", "videolist",
+                 "access_token", baidu_token, "dir", dir, NULL);
   return get_api(url);
 }
 
-int bdy_category_info(){
+int bdy_list_bt() {
   global_ctx *ctx = get_global_ctx();
   const char *baidu_token = ctx->config->baidu_token;
-  const char *category = "1";
-  char *url = build_url2(BDY_API_BASE, "/api/categoryinfo", //"category", category,
-                         "access_token", baidu_token, NULL);
+  const char *dir = "/";
+  char *url =
+      build_url2(BDY_API_BASE, "/rest/2.0/xpan/file", "method", "btlist",
+                 "access_token", baidu_token, "dir", dir, NULL);
+  return get_api(url);
+}
+
+int bdy_category_info() {
+  global_ctx *ctx = get_global_ctx();
+  const char *baidu_token = ctx->config->baidu_token;
+  // const char *category = "1";
+  char *url =
+      build_url2(BDY_API_BASE, "/api/categoryinfo", //"category", category,
+                 "access_token", baidu_token, NULL);
   return get_api(url);
 }

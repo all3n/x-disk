@@ -37,7 +37,7 @@ void add_header(http_request *req, const char *header);
 int curl_request(http_request *request, http_response *response);
 
 char *build_url(const char *base_url, ...);
-char *build_url2(const char *base_url, const char * query_path, ...);
+char *build_url2(const char *base_url, const char *query_path, ...);
 // callbacks
 size_t write_callback(void *ptr, size_t size, size_t nmemb, void *userdata);
 size_t read_callback(void *ptr, size_t size, size_t nmemb, void *stream);
