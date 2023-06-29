@@ -10,7 +10,7 @@ CFLAGS += -std=c11
 LDFLAGS += 
 SOURCES = $(filter-out test_%.c,$(wildcard *.c))
 OBJECTS = $(patsubst %.c,$(BUILDDIR)/%.o,$(SOURCES))
-LIBS = -lcurl -ljson-c
+LIBS = -lcurl -ljson-c -lreadline
 UNAME_S := $(shell uname -s)
 
 ifeq ($(UNAME_S),Linux)

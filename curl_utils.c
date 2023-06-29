@@ -1,3 +1,4 @@
+#include "utils.h"
 #include <curl/curl.h>
 #include <curl/easy.h>
 #include <json-c/json_tokener.h>
@@ -143,6 +144,7 @@ char *build_url2(const char *base_url, const char *query_path, ...) {
   }
 
   va_end(arg_list);
+  XLOG("build_url: %s\n", url);
   return url;
 }
 
@@ -185,10 +187,14 @@ void clean_request(http_request *request) {
   }
 }
 void clean_response(http_response *response) {
+  if (response == NULL) {
+    return;
+  }
   if (response->data) {
     free(response->data);
   }
   if (response->json) {
     json_object_put(response->json);
   }
+  free(response);
 }
