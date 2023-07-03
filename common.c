@@ -4,6 +4,29 @@
 #include "common.h"
 #include "file_io.h"
 #include "utils.h"
+
+int xfile_compare(const void *a, const void *b, void *udata) {
+  const struct xfile *x = a;
+  const struct xfile *y = b;
+  return strcmp(x->path, y->path);
+}
+bool xfile_iter(const void *item, void *udata) {
+  const struct xfile *f = item;
+  printf("%s\n", f->path);
+  return true;
+}
+
+uint64_t xfile_hash(const void *item, uint64_t seed0, uint64_t seed1) {
+  const struct xfile *f = item;
+  return hashmap_sip(f->path, strlen(f->path), seed0, seed1);
+}
+void xfile_free(void *item) {
+  const struct xfile *f = item;
+  if (f->path) {
+    free(f->path);
+  }
+}
+
 void destroy(void *p) {
   printf("destroy\n");
   if (p) {
@@ -29,6 +52,8 @@ int init_global_ctx(global_ctx *ctx) {
   parse_config(ctx);
   // curl global init
   curl_global_init(CURL_GLOBAL_DEFAULT);
+  ctx->files = hashmap_new(sizeof(struct xfile), 0, 0, 0, xfile_hash,
+                           xfile_compare, xfile_free, NULL);
   return 0;
 }
 void clean_config(global_ctx *ctx) {
@@ -58,6 +83,9 @@ void clean_global_ctx(global_ctx *ctx) {
     ctx->user_info = NULL;
   }
   curl_global_cleanup();
+  if (ctx->files) {
+    hashmap_free(ctx->files);
+  }
 }
 
 global_ctx *get_global_ctx() {

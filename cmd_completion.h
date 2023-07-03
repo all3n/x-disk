@@ -45,5 +45,6 @@ char **command_completion(const char *text, int start, int end) {
 static void init_readline() {
   rl_attempted_completion_function = command_completion;
   rl_bind_key('\t', rl_complete);
+  using_history();
 }
 #endif

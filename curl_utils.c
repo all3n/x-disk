@@ -12,15 +12,46 @@ bool is_http_ok(int code) { return code == CURLE_OK; }
 void add_header(http_request *req, const char *header) {
   req->headers = curl_slist_append(req->headers, header);
 }
+size_t write_callback_file(void *ptr, size_t size, size_t nmemb, FILE *stream) {
+  return fwrite(ptr, size, nmemb, stream);
+}
+
+int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow,
+                      curl_off_t ultotal, curl_off_t ulnow) {
+  // printf("progress_callback: dltotal:%ld dlnow:%ld ultotal:%ld ulnow:%ld\n",
+  // dltotal, dlnow, ultotal, ulnow);
+  if (dltotal > 0) {
+    double progress = (double)dlnow / (double)dltotal * 100.0;
+    printf("Download progress: %.2f%%\r", progress);
+  }
+  return 0;
+}
+
 // 发送GET请求
 int curl_request(http_request *request, http_response *response) {
   CURL *curl;
   CURLcode res;
   curl = curl_easy_init();
+  FILE *fp = NULL;
   if (curl) {
+    XLOG("url:%s\n", request->url);
     curl_easy_setopt(curl, CURLOPT_URL, request->url);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, response);
+    // support 302 redirect
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+
+    if (request->mode == MODE_DOWNLOAD) {
+      XLOG("download %s\n", request->file_path);
+      fp = fopen(request->file_path, "wb");
+      curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback_file);
+      curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+
+      curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback);
+      curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+      //      curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, &down_file);
+    } else {
+      curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+      curl_easy_setopt(curl, CURLOPT_WRITEDATA, response);
+    }
     switch (request->method) {
     case GET:
       break;
@@ -32,7 +63,8 @@ int curl_request(http_request *request, http_response *response) {
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "");
       }
 
-      if (request->file_path && strlen(request->file_path) > 0) {
+      if (request->mode == MODE_UPLOAD && request->file_path &&
+          strlen(request->file_path) > 0) {
         curl_easy_setopt(curl, CURLOPT_UPLOAD, 1L);
         curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
         curl_easy_setopt(curl, CURLOPT_READDATA, request->file_path);
@@ -46,6 +78,7 @@ int curl_request(http_request *request, http_response *response) {
     }
 
     res = curl_easy_perform(curl);
+    response->code = (int)res;
     if (request->json && response->data) {
       response->json = json_tokener_parse(response->data);
       // free txt response
@@ -53,6 +86,9 @@ int curl_request(http_request *request, http_response *response) {
       response->data = NULL;
     }
     curl_easy_cleanup(curl);
+    if (fp) {
+      fclose(fp);
+    }
     if (res == CURLE_OK) {
       return 0;
     } else {

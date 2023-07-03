@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
 
 // CLFAGS:
 // SOURCES: curl_utils.c utils.c file_io.c common.c baidu_yun.c
@@ -16,18 +17,24 @@ void print_help() {
   printf("help:\n");
   printf("q/quit/exit: exit\n");
 }
-void do_user(){
+void do_user() {
   http_response *res = bdy_user_info();
-  if(res == NULL){
+  if (res == NULL) {
     return;
   }
-  const char * json_str = json_object_to_json_string(res->json);
+  const char *json_str = json_object_to_json_string(res->json);
   printf("%s\n", json_str);
   clean_response(res);
 }
 
 void do_list() {
+  global_ctx *ctx = get_global_ctx();
+  hashmap_clear(ctx->files, false);
   http_response *res = bdy_file_list();
+  if (!is_http_ok(res->code)) {
+    printf("error: %d\n", res->code);
+    return;
+  }
   struct json_object *list_obj = json_object_object_get(res->json, "list");
   size_t len = json_object_array_length(list_obj);
   printf("len: %zu\n", len);
@@ -40,17 +47,119 @@ void do_list() {
     struct json_object *server_mtime_obj =
         json_object_object_get(item, "server_mtime");
     struct json_object *size_obj = json_object_object_get(item, "size");
+    struct json_object *fid_obj = json_object_object_get(item, "fs_id");
     if (name_obj != NULL && path_obj != NULL) {
       const char *name = json_object_get_string(name_obj);
       const char *path = json_object_get_string(path_obj);
       int32_t is_dir = json_object_get_int(is_dir_obj);
       int32_t mtime = json_object_get_int(server_mtime_obj);
       int64_t size = json_object_get_int64(size_obj);
+      int64_t fid = json_object_get_int64(fid_obj);
+
+      hashmap_set(
+          ctx->files,
+          &(struct xfile){.path = strdup(name), .fid = fid, .size = size});
       printf("%s\t%s %s %d %lld\n", path, name, is_dir ? "dir" : "file", mtime,
              size);
     }
   }
   clean_response(res);
+}
+
+void down_by_fid(int64_t fs_id, const char * down_local_path) {
+  http_response *res = bdy_meta(fs_id, 1);
+  if (res) {
+    struct json_object *list_obj = json_object_object_get(res->json, "list");
+    size_t len = json_object_array_length(list_obj);
+    if (len) {
+      struct json_object *fmeta = json_object_array_get_idx(list_obj, 0);
+      const char *dlink =
+          json_object_get_string(json_object_object_get(fmeta, "dlink"));
+      int64_t size =
+          json_object_get_int64(json_object_object_get(fmeta, "size"));
+      http_response *res = bdy_download(dlink, size, down_local_path);
+      printf("download %d\n", res->code);
+    }
+  }
+  clean_response(res);
+}
+void do_get(char *token) {
+  global_ctx *ctx = get_global_ctx();
+  const struct xfile *f =
+      hashmap_get(ctx->files, &(struct xfile){.path = token});
+  if (f) {
+    down_by_fid(f->fid, "/tmp/data");
+  }
+}
+
+void run_interactive() {
+  print_help();
+  char *input;
+  char delimiters[] = " ";
+  char *token;
+  while ((input = readline(">> ")) != NULL) {
+    int valid_input = 1;
+    bool exit = false;
+    token = strtok(input, delimiters);
+    if (strcmp(token, "exit") == 0 || strcmp(token, "quit") == 0 ||
+        strcmp(token, "q") == 0) {
+      exit = true;
+    } else if (strcmp(token, "h") == 0) {
+      print_help();
+    } else if (strcmp(token, "user") == 0) {
+      do_user();
+    } else if (strcmp(token, "l") == 0 || strcmp(token, "list") == 0) {
+      do_list();
+    } else if (strcmp(token, "g") == 0 || strcmp(token, "get") == 0) {
+      token = strtok(NULL, delimiters);
+      do_get(token);
+    } else {
+      valid_input = 0;
+      printf("unknown command: %s\n", input);
+      print_help();
+    }
+    if (valid_input) {
+      add_history(input);
+    }
+    free(input);
+    if (exit) {
+      break;
+    }
+  }
+}
+void run_cmd(int argc, char *argv[]) {
+  const char *cmd = argv[1];
+  if (strcmp(cmd, "d") == 0) {
+    if (argc < 3) {
+      printf("invalid args\n");
+      return;
+    }
+    char *file_path = argv[2];
+    http_response *res = bdy_search(file_path);
+    if (!is_http_ok(res->code)) {
+      printf("search fail!:%d\n", res->code);
+      return;
+    }
+
+    struct json_object *list_obj = json_object_object_get(res->json, "list");
+    size_t len = json_object_array_length(list_obj);
+    if (len > 0) {
+      // get first
+      struct json_object *item = json_object_array_get_idx(list_obj, 0);
+      struct json_object *fs_id_obj = json_object_object_get(item, "fs_id");
+      int64_t fs_id = json_object_get_int64(fs_id_obj);
+      printf("fs_id:%lld\n", fs_id);
+      if(argc == 4){
+        down_by_fid(fs_id, argv[3]);
+      }else{
+        down_by_fid(fs_id, basename(file_path));
+      }
+    } else {
+      printf("empty search\n");
+    }
+    // do_get(file_path);
+    clean_response(res);
+  }
 }
 
 int main(int argc, char *argv[]) {
@@ -61,46 +170,12 @@ int main(int argc, char *argv[]) {
     printf("baidu_token is null\n");
     return -1;
   }
-  // bdy_user_info();
-  // bdy_quota();
-  // bdy_file_list();
-  // bdy_category_info();
-  char *input;
-
-  print_help();
-  while ((input = readline(">> ")) != NULL) {
-    int valid_input = 1;
-    if (strcmp(input, "exit") == 0 || strcmp(input, "quit") == 0 ||
-        strcmp(input, "q") == 0) {
-      break;
-    } else if (strcmp(input, "h") == 0) {
-      print_help();
-    } else if (strcmp(input, "user") == 0) {
-      do_user();
-    } else if (strcmp(input, "l") == 0 || strcmp(input, "list") == 0) {
-      do_list();
-    } else {
-      valid_input = 0;
-      printf("unknown command: %s\n", input);
-    }
-    if (valid_input) {
-      add_history(input);
-    }
-    free(input);
+  if (argc == 1) {
+    run_interactive();
+  } else {
+    run_cmd(argc, argv);
   }
 
-  // char *url = build_url("http://127.0.0.1:5001/api/post", "wd", "test",
-  // NULL); printf("%s\n", url); http_request req = {.url = url, .json = true,
-  // .method = POST, .data = "", .headers = NULL}; http_response res = {.data =
-  // NULL, .size = 0}; int code = curl_request(&req, &res); if
-  // (is_http_ok(code)) {
-  //   printf("%s\n", json_object_to_json_string(res.json));
-  //   printf("%s\n", json_object_get_string(json_object_object_get(res.json,
-  //   "success")));
-  // }
-
-  // clean_request(&req);
-  // clean_response(&res);
   clean_global_ctx(ctx);
   return EXIT_SUCCESS;
 }

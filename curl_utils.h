@@ -13,6 +13,9 @@ typedef enum http_method {
   HEAD,
   PATCH
 } http_method;
+#define MODE_NORMAL 0
+#define MODE_UPLOAD 1
+#define MODE_DOWNLOAD 2
 
 typedef struct http_request {
   char *url;
@@ -21,14 +24,22 @@ typedef struct http_request {
   const char *data;
   struct curl_slist *headers;
   const char *file_path;
-
+  int mode;
+  int64_t down_size;
 } http_request;
 
 typedef struct http_response {
   char *data;
   size_t size;
   struct json_object *json;
+  int code;
 } http_response;
+
+struct file_meta{
+  int64_t size;
+  int64_t dsize;
+  FILE * fp;
+};
 
 bool is_http_ok(int code);
 

@@ -13,4 +13,8 @@ http_response *bdy_list_img();
 http_response *bdy_list_vido();
 http_response *bdy_list_bt();
 http_response *bdy_category_info();
+http_response *bdy_search(const char *search);
+http_response *bdy_meta(int64_t fid, int32_t dlink);
+http_response *bdy_download(const char *dlink, int64_t size,
+                            const char *down_local_path);
 #endif // !#ifndef _BAIDU_YUN_H
