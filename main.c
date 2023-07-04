@@ -1,10 +1,11 @@
 #include "baidu_yun.h"
 #include "cmd_completion.h"
 #include "common.h"
+#include "utils.h"
+#include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <libgen.h>
 
 // CLFAGS:
 // SOURCES: curl_utils.c utils.c file_io.c common.c baidu_yun.c
@@ -23,7 +24,7 @@ void do_user() {
     return;
   }
   const char *json_str = json_object_to_json_string(res->json);
-  printf("%s\n", json_str);
+  XLOG(DEBUG, "%s", json_str);
   clean_response(res);
 }
 
@@ -32,12 +33,12 @@ void do_list() {
   hashmap_clear(ctx->files, false);
   http_response *res = bdy_file_list();
   if (!is_http_ok(res->code)) {
-    printf("error: %d\n", res->code);
+    XLOG(ERROR, "error: %d", res->code);
     return;
   }
   struct json_object *list_obj = json_object_object_get(res->json, "list");
   size_t len = json_object_array_length(list_obj);
-  printf("len: %zu\n", len);
+  XLOG(DEBUG, "len: %zu", len);
   for (size_t i = 0; i < len; i++) {
     struct json_object *item = json_object_array_get_idx(list_obj, i);
     struct json_object *name_obj =
@@ -59,14 +60,14 @@ void do_list() {
       hashmap_set(
           ctx->files,
           &(struct xfile){.path = strdup(name), .fid = fid, .size = size});
-      printf("%s\t%s %s %d %lld\n", path, name, is_dir ? "dir" : "file", mtime,
-             size);
+      printf("\t%s\t%s %s %d %lld\n", path, name, is_dir ? "dir" : "file",
+             mtime, size);
     }
   }
   clean_response(res);
 }
 
-void down_by_fid(int64_t fs_id, const char * down_local_path) {
+void down_by_fid(int64_t fs_id, const char *down_local_path) {
   http_response *res = bdy_meta(fs_id, 1);
   if (res) {
     struct json_object *list_obj = json_object_object_get(res->json, "list");
@@ -78,7 +79,11 @@ void down_by_fid(int64_t fs_id, const char * down_local_path) {
       int64_t size =
           json_object_get_int64(json_object_object_get(fmeta, "size"));
       http_response *res = bdy_download(dlink, size, down_local_path);
-      printf("download %d\n", res->code);
+      if (is_http_ok(res->code)) {
+        XLOG(INFO, "download %s [ok]\n", down_local_path);
+      } else {
+        XLOG(ERROR, "download fail:%d\n", res->code);
+      }
     }
   }
   clean_response(res);
@@ -98,6 +103,11 @@ void run_interactive() {
   char delimiters[] = " ";
   char *token;
   while ((input = readline(">> ")) != NULL) {
+    size_t input_len = strlen(input);
+    if (input_len == 0) {
+      continue;
+    }
+
     int valid_input = 1;
     bool exit = false;
     token = strtok(input, delimiters);
@@ -115,7 +125,7 @@ void run_interactive() {
       do_get(token);
     } else {
       valid_input = 0;
-      printf("unknown command: %s\n", input);
+      XLOG(WARNING, "unknown command: %s\n", input);
       print_help();
     }
     if (valid_input) {
@@ -131,16 +141,15 @@ void run_cmd(int argc, char *argv[]) {
   const char *cmd = argv[1];
   if (strcmp(cmd, "d") == 0) {
     if (argc < 3) {
-      printf("invalid args\n");
+      XLOG(ERROR, "invalid args\n");
       return;
     }
     char *file_path = argv[2];
     http_response *res = bdy_search(file_path);
     if (!is_http_ok(res->code)) {
-      printf("search fail!:%d\n", res->code);
+      XLOG(ERROR, "search fail!:%d\n", res->code);
       return;
     }
-
     struct json_object *list_obj = json_object_object_get(res->json, "list");
     size_t len = json_object_array_length(list_obj);
     if (len > 0) {
@@ -148,16 +157,15 @@ void run_cmd(int argc, char *argv[]) {
       struct json_object *item = json_object_array_get_idx(list_obj, 0);
       struct json_object *fs_id_obj = json_object_object_get(item, "fs_id");
       int64_t fs_id = json_object_get_int64(fs_id_obj);
-      printf("fs_id:%lld\n", fs_id);
-      if(argc == 4){
+      XLOG(DEBUG, "fs_id:%lld\n", fs_id);
+      if (argc == 4) {
         down_by_fid(fs_id, argv[3]);
-      }else{
+      } else {
         down_by_fid(fs_id, basename(file_path));
       }
     } else {
-      printf("empty search\n");
+      XLOG(INFO, "empty search\n");
     }
-    // do_get(file_path);
     clean_response(res);
   }
 }
@@ -167,10 +175,12 @@ int main(int argc, char *argv[]) {
   global_ctx *ctx = get_global_ctx();
   init_global_ctx(ctx);
   if (!ctx->config->baidu_token) {
-    printf("baidu_token is null\n");
+    XLOG(WARNING, "baidu_token is null");
     return -1;
   }
   if (argc == 1) {
+    run_interactive();
+  } else if (strcmp(argv[1], "-i") == 0) {
     run_interactive();
   } else {
     run_cmd(argc, argv);

@@ -10,7 +10,7 @@ void destroy(void *p);
 #define AUTO_FREE __attribute__((cleanup(destroy)))
 
 struct xfile {
-  const char *path;
+  char *path;
   int64_t fid;
   int64_t size;
 };

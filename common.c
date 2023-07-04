@@ -21,7 +21,7 @@ uint64_t xfile_hash(const void *item, uint64_t seed0, uint64_t seed1) {
   return hashmap_sip(f->path, strlen(f->path), seed0, seed1);
 }
 void xfile_free(void *item) {
-  const struct xfile *f = item;
+  struct xfile *f = item;
   if (f->path) {
     free(f->path);
   }
@@ -47,7 +47,7 @@ int init_global_ctx(global_ctx *ctx) {
     printf("get_user_path failed\n");
     return -1;
   }
-  printf("config_path:%s\n", ctx->path);
+  XLOG(INFO, "config_path:%s", ctx->path);
   ctx->json = load_json_from_file(ctx->path);
   parse_config(ctx);
   // curl global init

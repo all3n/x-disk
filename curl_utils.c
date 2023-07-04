@@ -18,8 +18,6 @@ size_t write_callback_file(void *ptr, size_t size, size_t nmemb, FILE *stream) {
 
 int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow,
                       curl_off_t ultotal, curl_off_t ulnow) {
-  // printf("progress_callback: dltotal:%ld dlnow:%ld ultotal:%ld ulnow:%ld\n",
-  // dltotal, dlnow, ultotal, ulnow);
   if (dltotal > 0) {
     double progress = (double)dlnow / (double)dltotal * 100.0;
     printf("Download progress: %.2f%%\r", progress);
@@ -34,13 +32,12 @@ int curl_request(http_request *request, http_response *response) {
   curl = curl_easy_init();
   FILE *fp = NULL;
   if (curl) {
-    XLOG("url:%s\n", request->url);
     curl_easy_setopt(curl, CURLOPT_URL, request->url);
     // support 302 redirect
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
 
     if (request->mode == MODE_DOWNLOAD) {
-      XLOG("download %s\n", request->file_path);
+      XLOG(DEBUG, "download %s\n", request->file_path);
       fp = fopen(request->file_path, "wb");
       curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback_file);
       curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
@@ -87,6 +84,7 @@ int curl_request(http_request *request, http_response *response) {
     }
     curl_easy_cleanup(curl);
     if (fp) {
+      printf("\n");
       fclose(fp);
     }
     if (res == CURLE_OK) {
@@ -110,7 +108,7 @@ char *build_url(const char *base_url, ...) {
     }
     char *value = va_arg(arg_list, char *);
     if (value == NULL) {
-      fprintf(stderr, "build_url: key:%s value is NULL,ignore\n", key);
+      XLOG(ERROR, "build_url: key:%s value is NULL,ignore\n", key);
       break;
     }
     num_args += 1;
@@ -152,7 +150,7 @@ char *build_url2(const char *base_url, const char *query_path, ...) {
     }
     char *value = va_arg(arg_list, char *);
     if (value == NULL) {
-      fprintf(stderr, "build_url: key:%s value is NULL,ignore\n", key);
+      XLOG(ERROR, "build_url: key:%s value is NULL,ignore\n", key);
       break;
     }
     num_args += 1;
@@ -180,7 +178,7 @@ char *build_url2(const char *base_url, const char *query_path, ...) {
   }
 
   va_end(arg_list);
-  XLOG("build_url: %s\n", url);
+  XLOG(DEBUG, "build_url: %s\n", url);
   return url;
 }
 
@@ -190,7 +188,7 @@ size_t write_callback(void *ptr, size_t size, size_t nmemb, void *userdata) {
   size_t real_size = size * nmemb;
   data->data = (char *)realloc(data->data, data->size + real_size + 1);
   if (data->data == NULL) {
-    fprintf(stderr, "realloc failed\n");
+    XLOG(ERROR, "realloc failed\n");
     return 0;
   }
   memcpy(data->data + data->size, ptr, real_size);

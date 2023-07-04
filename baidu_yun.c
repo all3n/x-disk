@@ -43,22 +43,18 @@ http_response *bdy_quota() {
   memset(res, 0, sizeof(http_response));
   int code = curl_request(&req, res);
   if (is_http_ok(code)) {
-    printf("%s\n", json_object_to_json_string(res->json));
+    XLOG(DEBUG, "quota: %s\n", json_object_to_json_string(res->json));
   }
   clean_request(&req);
-  // release in global
   return res;
 }
 http_response *get_api(http_request *req) {
   http_response *p_res = malloc(sizeof(http_response));
-  //add_header(req, "User-Agent: pan.baidu.com");
-  //add_header(req, "Host: d.pcs.baidu.com");
   memset(p_res, 0, sizeof(http_response));
-
   int code = curl_request(req, p_res);
   if (is_http_ok(code)) {
     if (p_res->json) {
-      printf("%s\n", json_object_to_json_string(p_res->json));
+      XLOG(DEBUG, "%s\n", json_object_to_json_string(p_res->json));
     }
   }
   clean_request(req);
@@ -123,12 +119,12 @@ http_response *bdy_category_info() {
   return get_api(&(http_request){.url = url, .json = true, .method = GET});
 }
 
-http_response *bdy_search(const char * search){
+http_response *bdy_search(const char *search) {
   global_ctx *ctx = get_global_ctx();
   const char *baidu_token = ctx->config->baidu_token;
-  char *url = build_url2(BDY_API_BASE, "/rest/2.0/xpan/file", "method", "search",
-                         "key", search, "num", "1",
-                         "access_token", baidu_token, NULL);
+  char *url =
+      build_url2(BDY_API_BASE, "/rest/2.0/xpan/file", "method", "search", "key",
+                 search, "num", "1", "access_token", baidu_token, NULL);
   return get_api(&(http_request){.url = url, .json = true, .method = GET});
 }
 http_response *bdy_meta(int64_t fid, int32_t dlink) {
@@ -142,22 +138,22 @@ http_response *bdy_meta(int64_t fid, int32_t dlink) {
   return get_api(&(http_request){.url = url, .json = true, .method = GET});
 }
 
-http_response *bdy_download(const char *dlink, int64_t size, const char *down_local_path) {
+http_response *bdy_download(const char *dlink, int64_t size,
+                            const char *down_local_path) {
   global_ctx *ctx = get_global_ctx();
   char *url = malloc(4096);
   memset(url, 0, 2048);
   strcat(url, dlink);
   strcat(url, "&access_token=");
   strcat(url, ctx->config->baidu_token);
-  XLOG("down url: %s\n", url);
+  XLOG(DEBUG, "down url: %s\n", url);
 
   http_request req = {.url = url,
                       .json = false,
                       .method = GET,
                       .mode = MODE_DOWNLOAD,
                       .file_path = down_local_path,
-                      .down_size = size
-                };
+                      .down_size = size};
   add_header(&req, "Host: d.pcs.baidu.com");
   return get_api(&req);
 }
