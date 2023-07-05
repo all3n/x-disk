@@ -42,13 +42,15 @@ void parse_config(global_ctx *ctx) {
   ctx->config = cfg;
 }
 int init_global_ctx(global_ctx *ctx) {
-  ctx->path = get_user_path(CONFIG_PATH);
-  if (ctx->path == NULL) {
+  ctx->config_path = get_user_path(CONFIG_PATH);
+  memset(ctx->pwd, 0, PATH_MAX);
+  strcpy(ctx->pwd, "/");
+  if (ctx->config_path == NULL) {
     printf("get_user_path failed\n");
     return -1;
   }
-  XLOG(INFO, "config_path:%s", ctx->path);
-  ctx->json = load_json_from_file(ctx->path);
+  XLOG(INFO, "config_path:%s", ctx->config_path);
+  ctx->json = load_json_from_file(ctx->config_path);
   parse_config(ctx);
   // curl global init
   curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -64,9 +66,9 @@ void clean_config(global_ctx *ctx) {
   ctx->config = NULL;
 }
 void clean_global_ctx(global_ctx *ctx) {
-  if (ctx->path) {
-    free(ctx->path);
-    ctx->path = NULL;
+  if (ctx->config_path) {
+    free(ctx->config_path);
+    ctx->config_path = NULL;
   }
   if (ctx->json) {
     json_object_put(ctx->json);

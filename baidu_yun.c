@@ -2,6 +2,7 @@
 #include "common.h"
 #include "curl_utils.h"
 #include "utils.h"
+#include <libgen.h>
 // https://pan.baidu.com/union/doc/Kl4gsu388
 
 /*
@@ -64,7 +65,7 @@ http_response *get_api(http_request *req) {
 http_response *bdy_file_list() {
   global_ctx *ctx = get_global_ctx();
   const char *baidu_token = ctx->config->baidu_token;
-  const char *dir = "/";
+  const char *dir = ctx->pwd;
   char *url = build_url2(BDY_API_BASE, "/rest/2.0/xpan/file", "method", "list",
                          "access_token", baidu_token, "dir", dir, NULL);
   return get_api(&(http_request){.url = url, .json = true, .method = GET});
@@ -122,9 +123,18 @@ http_response *bdy_category_info() {
 http_response *bdy_search(const char *search) {
   global_ctx *ctx = get_global_ctx();
   const char *baidu_token = ctx->config->baidu_token;
-  char *url =
-      build_url2(BDY_API_BASE, "/rest/2.0/xpan/file", "method", "search", "key",
-                 search, "num", "1", "access_token", baidu_token, NULL);
+  const char *dir, *key;
+  if (search[0] == '/') {
+    dir = dirname((char *)search);
+    key = basename((char *)search);
+  } else {
+    dir = ctx->pwd;
+    key = search;
+  }
+
+  char *url = build_url2(BDY_API_BASE, "/rest/2.0/xpan/file", "method",
+                         "search", "key", key, "dir", dir, "num", "1",
+                         "access_token", baidu_token, NULL);
   return get_api(&(http_request){.url = url, .json = true, .method = GET});
 }
 http_response *bdy_meta(int64_t fid, int32_t dlink) {
@@ -155,5 +165,6 @@ http_response *bdy_download(const char *dlink, int64_t size,
                       .file_path = down_local_path,
                       .down_size = size};
   add_header(&req, "Host: d.pcs.baidu.com");
+  add_header(&req, "User-Agent: pan.baidu.com");
   return get_api(&req);
 }

@@ -9,6 +9,8 @@
 #include "curl_utils.h"
 
 bool is_http_ok(int code) { return code == CURLE_OK; }
+const char *code2str(int code) { return curl_easy_strerror(code); }
+
 void add_header(http_request *req, const char *header) {
   req->headers = curl_slist_append(req->headers, header);
 }
@@ -23,6 +25,12 @@ int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow,
     printf("Download progress: %.2f%%\r", progress);
   }
   return 0;
+}
+size_t header_callback(char *buffer, size_t size, size_t nitems,
+                       void *userdata) {
+  size_t total_size = size * nitems;
+  printf("%.*s\n", total_size, buffer);
+  return total_size;
 }
 
 // 发送GET请求
@@ -39,9 +47,15 @@ int curl_request(http_request *request, http_response *response) {
     if (request->mode == MODE_DOWNLOAD) {
       XLOG(DEBUG, "download %s\n", request->file_path);
       fp = fopen(request->file_path, "wb");
+      if(fp == NULL){
+        // fopen error
+        XLOG(ERROR, "fopen error:%s\n", request->file_path);
+        return -1;
+      }
       curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback_file);
       curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
 
+      // FOR No Content-Length
       curl_easy_setopt(curl, CURLOPT_XFERINFOFUNCTION, progress_callback);
       curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
       //      curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, &down_file);
@@ -73,8 +87,15 @@ int curl_request(http_request *request, http_response *response) {
     if (request->headers) {
       curl_easy_setopt(curl, CURLOPT_HTTPHEADER, request->headers);
     }
+    // curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, header_callback);
 
     res = curl_easy_perform(curl);
+    if (res == CURLE_OK) {
+      long http_code = 0;
+      curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+      XLOG(DEBUG, "http_code:%ld\n", http_code);
+      response->http_code = (int)http_code;
+    }
     response->code = (int)res;
     if (request->json && response->data) {
       response->json = json_tokener_parse(response->data);

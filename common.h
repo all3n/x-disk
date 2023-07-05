@@ -4,6 +4,7 @@
 #include <json-c/json.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/syslimits.h>
 
 #define CONFIG_PATH "/.config/x-disk/config.json"
 void destroy(void *p);
@@ -19,7 +20,8 @@ typedef struct app_config {
 
 } app_config;
 typedef struct global_ctx {
-  char *path;
+  char *config_path;
+  char pwd[PATH_MAX];
   app_config *config;
   struct json_object *json;
   struct json_object *user_info;

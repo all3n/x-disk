@@ -33,6 +33,7 @@ typedef struct http_response {
   size_t size;
   struct json_object *json;
   int code;
+  int http_code;
 } http_response;
 
 struct file_meta{
@@ -42,6 +43,7 @@ struct file_meta{
 };
 
 bool is_http_ok(int code);
+const char * code2str(int code);
 
 void add_header(http_request *req, const char *header);
 // 发送GET请求

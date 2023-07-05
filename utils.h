@@ -11,6 +11,7 @@
 #define XLOG_ERROR 3
 static int LOG_LEVEL = -1;
 int get_log_level();
+void set_log_level(const char *log_level_str);
 
 #if DEBUG
 #define XLOG(level, format, ...)                                               \
@@ -50,4 +51,7 @@ int get_log_level();
 
 /* get user path, you should free path if your not use avoid memory leak */
 char *get_user_path(const char *sub_path);
+int is_dir(const char *path);
+char *expanduser(const char *path);
+
 #endif // !#ifndef _UTILS_H

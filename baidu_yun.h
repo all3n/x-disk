@@ -4,6 +4,11 @@
 
 #define BDY_API_BASE "https://pan.baidu.com"
 #define BDY_API_USER_INFO "/rest/2.0/xpan/nas?method=uinfo&openapi=xpansdk"
+
+#define ERR_LIST_NOT_AUTH -7
+#define ERR_LIST_NOT_EXIST -9
+
+
 /* /rest/2.0/xpan/nas?method=uinfo&openapi=xpansdk */
 http_response *bdy_user_info();
 http_response *bdy_quota();
