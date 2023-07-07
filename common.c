@@ -49,7 +49,7 @@ int init_global_ctx(global_ctx *ctx) {
     printf("get_user_path failed\n");
     return -1;
   }
-  XLOG(INFO, "config_path:%s", ctx->config_path);
+  XLOG(DEBUG, "config_path:%s", ctx->config_path);
   ctx->json = load_json_from_file(ctx->config_path);
   parse_config(ctx);
   // curl global init

@@ -1,10 +1,11 @@
 #ifndef _CMD_COMPLETION_H
 #define _CMD_COMPLETION_H
 
+#include <readline/history.h>
+#include <readline/readline.h>
+
 char *command_generator(const char *text, int state);
-
 char **command_completion(const char *text, int start, int end);
-
-static void init_readline();
+void init_readline();
 
 #endif

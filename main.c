@@ -1,5 +1,6 @@
 #include "baidu_yun.h"
 #include "cmd_completion.h"
+#include "cmd.h"
 #include "common.h"
 #include "utils.h"
 #include <libgen.h>
@@ -160,9 +161,7 @@ void do_cd(char *target) {
     strcat(ctx->pwd, target);
   }
 }
-void do_log_level(char * level) {
-  set_log_level(level);
-}
+void do_log_level(char *level) { set_log_level(level); }
 void do_get(char *token, const char *target) {
   global_ctx *ctx = get_global_ctx();
   const struct xfile *f =
@@ -203,10 +202,10 @@ void run_interactive() {
     } else if (strcmp(token, "cd") == 0) {
       token = strtok(NULL, delimiters);
       do_cd(token);
-    } else if (strcmp(token, "log_level") == 0){
+    } else if (strcmp(token, "log_level") == 0) {
       token = strtok(NULL, delimiters);
       do_log_level(token);
-    }else if (strcmp(token, "user") == 0) {
+    } else if (strcmp(token, "user") == 0) {
       do_user();
     } else if (strcmp(token, "l") == 0 || strcmp(token, "list") == 0 ||
                strcmp(token, "ls") == 0) {
@@ -220,7 +219,7 @@ void run_interactive() {
       XLOG(WARNING, "unknown command: %s\n", input);
       print_help();
     }
-    if(input){
+    if (input) {
       add_history(input);
       free(input);
     }
@@ -252,14 +251,11 @@ int main(int argc, char *argv[]) {
     XLOG(WARNING, "baidu_token is null");
     return -1;
   }
-  if (argc == 1) {
-    run_interactive();
-  } else if (strcmp(argv[1], "-i") == 0) {
+  if (argc == 1 || strcmp(argv[1], "-i") == 0) {
     run_interactive();
   } else {
     run_cmd(argc, argv);
   }
-
   clean_global_ctx(ctx);
   return EXIT_SUCCESS;
 }

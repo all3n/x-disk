@@ -1,6 +1,4 @@
 #include "cmd_completion.h"
-#include <readline/history.h>
-#include <readline/readline.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,7 +38,7 @@ char **command_completion(const char *text, int start, int end) {
   return matches;
 }
 
-static void init_readline() {
+void init_readline() {
   rl_attempted_completion_function = command_completion;
   rl_bind_key('\t', rl_complete);
   using_history();
