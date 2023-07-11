@@ -28,7 +28,7 @@ int progress_callback(void *clientp, curl_off_t dltotal, curl_off_t dlnow,
 }
 size_t header_callback(char *buffer, size_t size, size_t nitems,
                        void *userdata) {
-  size_t total_size = size * nitems;
+  int total_size = size * nitems;
   printf("%.*s\n", total_size, buffer);
   return total_size;
 }

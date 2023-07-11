@@ -38,14 +38,14 @@ void do_list() {
     return;
   }
   // errno
-  int errno = json_object_get_int(json_object_object_get(res->json, "errno"));
-  if (errno != 0) {
-    if (errno == ERR_LIST_NOT_AUTH) {
+  int32_t eno = json_object_get_int(json_object_object_get(res->json, "errno"));
+  if (eno != 0) {
+    if (eno == ERR_LIST_NOT_AUTH) {
       XLOG(INFO, "not auth");
-    } else if (errno == ERR_LIST_NOT_EXIST) {
+    } else if (eno == ERR_LIST_NOT_EXIST) {
       XLOG(INFO, "not exist");
     } else {
-      XLOG(INFO, "unknown error: %d", errno);
+      XLOG(INFO, "unknown error: %d", eno);
     }
     clean_response(res);
     return;

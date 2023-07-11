@@ -1,5 +1,7 @@
 #include "utils.h"
+#ifdef __unix__
 #include <pwd.h>
+#endif
 #include <stdio.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -71,11 +73,13 @@ char *expanduser(const char *path) {
   if (path[0] == '~') {
     const char *home = getenv("HOME");
 
+    #ifdef __unix__
     if (home == NULL) {
       struct passwd *pw = getpwuid(getuid());
       if (pw != NULL)
         home = pw->pw_dir;
     }
+    #endif
 
     if (home != NULL) {
       size_t len = strlen(home) + strlen(path) - 1;

@@ -4,7 +4,11 @@
 #include <json-c/json.h>
 #include <stdio.h>
 #include <string.h>
+#ifdef __MINGW32__
+#include <limits.h>
+#else
 #include <sys/syslimits.h>
+#endif
 
 #define CONFIG_PATH "/.config/x-disk/config.json"
 void destroy(void *p);

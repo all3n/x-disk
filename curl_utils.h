@@ -9,10 +9,12 @@ typedef enum http_method {
   GET = 0,
   POST,
   PUT,
-  DELETE,
   HEAD,
   PATCH
 } http_method;
+
+
+
 #define MODE_NORMAL 0
 #define MODE_UPLOAD 1
 #define MODE_DOWNLOAD 2
@@ -46,7 +48,6 @@ bool is_http_ok(int code);
 const char * code2str(int code);
 
 void add_header(http_request *req, const char *header);
-// 发送GET请求
 int curl_request(http_request *request, http_response *response);
 
 char *build_url(const char *base_url, ...);

@@ -4,7 +4,6 @@ else
     include project.local.makefile
 endif
 
-CC = gcc
 BUILDDIR = build
 CFLAGS += -std=c11
 LDFLAGS += 

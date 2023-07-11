@@ -1,6 +1,7 @@
 #ifndef _CMD_COMPLETION_H
 #define _CMD_COMPLETION_H
 
+#include <stdio.h>
 #include <readline/history.h>
 #include <readline/readline.h>
 

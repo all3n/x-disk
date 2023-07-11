@@ -1,5 +1,6 @@
 #include "file_io.h"
-#include <json-c/json_types.h>
+//#include <json-c/json_types.h>
+#include <json-c/json.h>
 
 struct json_object *load_json_from_file(const char *path) {
   FILE *fp = fopen(path, "r");
