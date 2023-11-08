@@ -1,10 +1,40 @@
 #include "baidu_yun.h"
 #include "common.h"
 #include "curl_utils.h"
+#include <ch_curl_utils.h>
 #include "utils.h"
 #include <libgen.h>
 // https://pan.baidu.com/union/doc/Kl4gsu388
+http_response *get_api(http_request *req) {
+  http_response *p_res = malloc(sizeof(http_response));
+  memset(p_res, 0, sizeof(http_response));
+  int code = curl_request(req, p_res);
+  if (is_http_ok(code)) {
+    if (p_res->json) {
+      XLOG(DEBUG, "%s\n", json_object_to_json_string(p_res->json));
+    }
+  }
+  clean_request(req);
+  return p_res;
+}
 
+http_response *bdy_device_code() {
+  global_ctx *ctx = get_global_ctx();
+  const char *app_key = ctx->config->app_key;
+  // curl -L -X GET
+  // "https://openapi.baidu.com/oauth/2.0/device/code?response_type=device_code&client_id=$APP_KEY&scope=basic,netdisk"
+  //  -H 'User-Agent: pan.baidu.com'
+  char *url = build_url2(BD_OPENAPI_BASE, "/oauth/2.0/device/code",
+                         "response_type", "device_code", "client_id", app_key,
+                         "scope", "basic,netdisk", NULL);
+
+  return get_api(&(http_request){.url = url, .json = true, .method = GET});
+}
+
+
+
+
+http_response *bdy_access_code() { return NULL; }
 /*
  *  get_user_info account/avatar/vip_type
  *  https://pan.baidu.com/union/doc/pksg0s9ns
@@ -49,19 +79,6 @@ http_response *bdy_quota() {
   clean_request(&req);
   return res;
 }
-http_response *get_api(http_request *req) {
-  http_response *p_res = malloc(sizeof(http_response));
-  memset(p_res, 0, sizeof(http_response));
-  int code = curl_request(req, p_res);
-  if (is_http_ok(code)) {
-    if (p_res->json) {
-      XLOG(DEBUG, "%s\n", json_object_to_json_string(p_res->json));
-    }
-  }
-  clean_request(req);
-  return p_res;
-}
-
 http_response *bdy_file_list() {
   global_ctx *ctx = get_global_ctx();
   const char *baidu_token = ctx->config->baidu_token;
@@ -152,7 +169,7 @@ http_response *bdy_download(const char *dlink, int64_t size,
                             const char *down_local_path) {
   global_ctx *ctx = get_global_ctx();
   char *url = malloc(4096);
-  memset(url, 0, 2048);
+  memset(url, 0, 4096);
   strcat(url, dlink);
   strcat(url, "&access_token=");
   strcat(url, ctx->config->baidu_token);

@@ -1,6 +1,6 @@
 #include <curl/curl.h>
 #include <stdio.h>
-
+#include <ch_curl_utils.h>
 #include "common.h"
 #include "file_io.h"
 #include "utils.h"
@@ -38,10 +38,13 @@ void parse_config(global_ctx *ctx) {
   app_config *cfg = (app_config *)malloc(sizeof(app_config));
   cfg->baidu_token =
       json_object_get_string(json_object_object_get(ctx->json, "baidu_token"));
+  cfg->app_key =
+      json_object_get_string(json_object_object_get(ctx->json, "app_key"));
 
   ctx->config = cfg;
 }
 int init_global_ctx(global_ctx *ctx) {
+  memset(ctx, 0, sizeof(global_ctx));
   ctx->config_path = get_user_path(CONFIG_PATH);
   memset(ctx->pwd, 0, PATH_MAX);
   strcpy(ctx->pwd, "/");
@@ -53,7 +56,10 @@ int init_global_ctx(global_ctx *ctx) {
   ctx->json = load_json_from_file(ctx->config_path);
   parse_config(ctx);
   // curl global init
-  curl_global_init(CURL_GLOBAL_DEFAULT);
+  // curl_global_init(CURL_GLOBAL_DEFAULT);
+  ctx->requests = malloc(sizeof(struct ch_requests));
+  ch_init_requests(ctx->requests);
+  
   ctx->files = hashmap_new(sizeof(struct xfile), 0, 0, 0, xfile_hash,
                            xfile_compare, xfile_free, NULL);
   return 0;
@@ -84,7 +90,12 @@ void clean_global_ctx(global_ctx *ctx) {
     free(ctx->user_info);
     ctx->user_info = NULL;
   }
-  curl_global_cleanup();
+  // curl_global_cleanup();
+  if(ctx->requests) {
+    ctx->requests->cleanup(ctx->requests);
+    free(ctx->requests);
+    ctx->requests = NULL;
+  }
   if (ctx->files) {
     hashmap_free(ctx->files);
   }

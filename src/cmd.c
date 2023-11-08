@@ -1,19 +1,14 @@
-#include "baidu_yun.h"
-#include "cmd_completion.h"
 #include "cmd.h"
+#include "baidu_yun.h"
+#include "baidu_def.h"
+//#include "cmd_completion.h"
+#include <readline/readline.h>
 #include "common.h"
 #include "utils.h"
 #include <libgen.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-// CLFAGS:
-// SOURCES: curl_utils.c utils.c file_io.c common.c baidu_yun.c
-// LIBS: -lcurl -ljson-c -lreadline
-// BUILD_DIR: build
-
-#define PROMPT "XDISK>> "
 
 void print_help() {
   printf("help:\n");
@@ -45,7 +40,7 @@ void do_list() {
     } else if (eno == ERR_LIST_NOT_EXIST) {
       XLOG(INFO, "not exist");
     } else {
-      XLOG(INFO, "unknown error: %d", eno);
+      XLOG(INFO, "%s", bdy_get_error_msg(eno));
     }
     clean_response(res);
     return;
@@ -243,19 +238,3 @@ void run_cmd(int argc, char *argv[]) {
   }
 }
 
-int main(int argc, char *argv[]) {
-  init_readline();
-  global_ctx *ctx = get_global_ctx();
-  init_global_ctx(ctx);
-  if (!ctx->config->baidu_token) {
-    XLOG(WARNING, "baidu_token is null");
-    return -1;
-  }
-  if (argc == 1 || strcmp(argv[1], "-i") == 0) {
-    run_interactive();
-  } else {
-    run_cmd(argc, argv);
-  }
-  clean_global_ctx(ctx);
-  return EXIT_SUCCESS;
-}

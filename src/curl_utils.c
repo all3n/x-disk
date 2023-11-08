@@ -45,11 +45,11 @@ int curl_request(http_request *request, http_response *response) {
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
 
     if (request->mode == MODE_DOWNLOAD) {
-      XLOG(DEBUG, "download %s\n", request->file_path);
+      printf("download %s\n", request->file_path);
       fp = fopen(request->file_path, "wb");
-      if(fp == NULL){
+      if (fp == NULL) {
         // fopen error
-        XLOG(ERROR, "fopen error:%s\n", request->file_path);
+        printf("fopen error:%s\n", request->file_path);
         return -1;
       }
       curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback_file);
@@ -93,7 +93,7 @@ int curl_request(http_request *request, http_response *response) {
     if (res == CURLE_OK) {
       long http_code = 0;
       curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-      XLOG(DEBUG, "http_code:%ld\n", http_code);
+      printf("http_code:%ld\n", http_code);
       response->http_code = (int)http_code;
     }
     response->code = (int)res;
@@ -129,7 +129,7 @@ char *build_url(const char *base_url, ...) {
     }
     char *value = va_arg(arg_list, char *);
     if (value == NULL) {
-      XLOG(ERROR, "build_url: key:%s value is NULL,ignore\n", key);
+      printf("build_url: key:%s value is NULL,ignore\n", key);
       break;
     }
     num_args += 1;
@@ -171,7 +171,7 @@ char *build_url2(const char *base_url, const char *query_path, ...) {
     }
     char *value = va_arg(arg_list, char *);
     if (value == NULL) {
-      XLOG(ERROR, "build_url: key:%s value is NULL,ignore\n", key);
+      printf("build_url: key:%s value is NULL,ignore\n", key);
       break;
     }
     num_args += 1;
@@ -199,7 +199,7 @@ char *build_url2(const char *base_url, const char *query_path, ...) {
   }
 
   va_end(arg_list);
-  XLOG(DEBUG, "build_url: %s\n", url);
+  printf("build_url: %s\n", url);
   return url;
 }
 
@@ -234,9 +234,6 @@ void clean_request(http_request *request) {
   if (request->url) {
     free(request->url);
   }
-  // if(request->data){
-  //   free(request->data);
-  // }
   if (request->headers) {
     curl_slist_free_all(request->headers);
   }
